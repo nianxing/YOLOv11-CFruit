@@ -49,6 +49,8 @@ YOLOv11-CFruit/
 │   └── basic_detection.py
 ├── requirements.txt
 ├── setup.py
+├── install_linux.sh
+├── fix_opencv_linux.sh
 ├── LICENSE
 ├── DesignDoc_en.md
 ├── DesignDoc.md
@@ -63,12 +65,85 @@ YOLOv11-CFruit/
 - CUDA 11.0+ (GPU recommended)
 
 ### Installation
+
+#### Windows
 ```powershell
 # Recommended: PowerShell
 .\install.ps1
 # Or batch script
 install.bat
 ```
+
+#### Linux
+```bash
+# Method 1: Use Linux installation script (Recommended)
+chmod +x install_linux.sh
+./install_linux.sh
+
+# Method 2: Manual installation
+sudo apt update  # Ubuntu/Debian
+sudo apt install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgtk-3-0
+pip install -r requirements.txt
+pip install -e .
+
+# Method 3: If you encounter OpenCV issues
+chmod +x fix_opencv_linux.sh
+./fix_opencv_linux.sh
+```
+
+#### macOS
+```bash
+# Install system dependencies
+brew install opencv
+
+# Install Python dependencies
+pip install -r requirements.txt
+pip install -e .
+```
+
+#### Docker (Recommended for Linux)
+```bash
+# Build and run with Docker
+docker build -t yolov11-cfruit .
+docker run -it --rm -v $(pwd):/workspace yolov11-cfruit
+
+# Or use docker-compose
+docker-compose up -d yolov11-cfruit
+docker-compose exec yolov11-cfruit bash
+
+# For GPU support (requires nvidia-docker)
+docker-compose up -d yolov11-cfruit-gpu
+docker-compose exec yolov11-cfruit-gpu bash
+```
+
+### Troubleshooting OpenCV Issues
+
+If you encounter `libGL.so.1: cannot open shared object file` error on Linux:
+
+1. **Quick Fix**: Run the fix script
+   ```bash
+   chmod +x fix_opencv_linux.sh
+   ./fix_opencv_linux.sh
+   ```
+
+2. **Manual Fix**: Install system dependencies
+   ```bash
+   # Ubuntu/Debian
+   sudo apt install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgtk-3-0
+   
+   # CentOS/RHEL/Fedora
+   sudo yum install -y mesa-libGL glib2 libSM libXext libXrender libgomp gtk3
+   
+   # Reinstall OpenCV
+   pip uninstall opencv-python
+   pip install opencv-python-headless
+   ```
+
+3. **Alternative**: Use Docker
+   ```bash
+   docker run -it --rm -v $(pwd):/workspace python:3.9 bash
+   cd /workspace && pip install -r requirements.txt
+   ```
 
 ### Verify Installation
 ```bash

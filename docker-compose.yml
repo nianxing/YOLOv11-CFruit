@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  yolov11-cfruit:
+    build: .
+    container_name: yolov11-cfruit
+    volumes:
+      # Mount current directory to /workspace
+      - .:/workspace
+      # Mount data directory for persistent storage
+      - ./data:/workspace/data
+      # Mount checkpoints directory for model weights
+      - ./checkpoints:/workspace/checkpoints
+      # Mount output directory for results
+      - ./output:/workspace/output
+    environment:
+      - PYTHONPATH=/workspace
+      - CUDA_VISIBLE_DEVICES=0
+    ports:
+      # Optional: expose port for web interface if needed
+      - "8888:8888"
+    working_dir: /workspace
+    command: bash
+    stdin_open: true
+    tty: true
+
+  # GPU version (requires nvidia-docker)
+  yolov11-cfruit-gpu:
+    build: .
+    container_name: yolov11-cfruit-gpu
+    volumes:
+      - .:/workspace
+      - ./data:/workspace/data
+      - ./checkpoints:/workspace/checkpoints
+      - ./output:/workspace/output
+    environment:
+      - PYTHONPATH=/workspace
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    ports:
+      - "8888:8888"
+    working_dir: /workspace
+    command: bash
+    stdin_open: true
+    tty: true 
