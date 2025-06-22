@@ -193,6 +193,47 @@ If you encounter Docker permission issues:
    docker build -t yolov11-cfruit .
    ```
 
+#### Docker Network Issues
+If you encounter `ERROR [internal] load metadata for docker.io/library/python:3.12-slim`:
+
+1. **Quick Fix**: Run the network fix script
+   ```bash
+   # Linux
+   chmod +x fix_docker_network.sh
+   ./fix_docker_network.sh
+   
+   # Windows
+   .\fix_docker_network.ps1
+   ```
+
+2. **Configure Docker Registry Mirrors**:
+   - **Linux**: Edit `/etc/docker/daemon.json`
+   - **Windows**: Docker Desktop Settings -> Docker Engine
+   ```json
+   {
+     "registry-mirrors": [
+       "https://docker.mirrors.ustc.edu.cn",
+       "https://hub-mirror.c.163.com",
+       "https://mirror.baidubce.com"
+     ]
+   }
+   ```
+
+3. **Manual Pull**: Try pulling the image manually
+   ```bash
+   docker pull python:3.11-slim
+   ```
+
+4. **Use Alternative Base Image**: Dockerfile now uses `python:3.11-slim`
+   ```bash
+   docker build -t yolov11-cfruit .
+   ```
+
+5. **Clear Docker Cache**:
+   ```bash
+   docker system prune -a
+   ```
+
 ## 📖 Configuration & Usage
 
 ### YOLOv11 Config Example (`configs/model/yolov11_cfruit.yaml`)
