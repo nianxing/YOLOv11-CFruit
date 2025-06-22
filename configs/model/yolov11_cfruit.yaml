@@ -1,0 +1,87 @@
+# YOLOv11-CFruit 模型配置
+model:
+  # 主干网络配置
+  backbone:
+    type: 'cspdarknet_v11'
+    depth_multiple: 1.0
+    width_multiple: 1.0
+    cbam: true
+    cbam_ratio: 16
+    use_c2f: true  # YOLOv11特性：使用C2f模块
+    activation: 'silu'
+    
+  # 颈部网络配置
+  neck:
+    type: 'panet'
+    depth_multiple: 1.0
+    width_multiple: 1.0
+    transformer: true
+    transformer_heads: 8
+    transformer_dim: 256
+    transformer_layers: 2  # YOLOv11增加层数
+    activation: 'silu'
+    
+  # 头部网络配置
+  head:
+    type: 'anchor_free'
+    num_classes: 1
+    reg_max: 16
+    activation: 'silu'
+
+# 训练配置 - YOLOv11优化
+training:
+  epochs: 300
+  batch_size: 16
+  img_size: 640
+  device: 0
+  
+  # 优化器配置 - YOLOv11改进
+  optimizer:
+    type: 'adamw'  # YOLOv11使用AdamW
+    lr: 0.001
+    weight_decay: 0.0005
+    betas: [0.9, 0.999]
+    
+  # 学习率调度器 - YOLOv11改进
+  scheduler:
+    type: 'cosine'
+    warmup_epochs: 3
+    warmup_lr: 0.0001
+    min_lr: 0.00001  # YOLOv11添加最小学习率
+    
+  # 损失函数权重 - YOLOv11优化
+  loss_weights:
+    cls: 0.3  # 降低分类损失权重
+    box: 8.0  # 增加边界框损失权重
+    dfl: 1.5
+
+# 数据增强配置 - YOLOv11增强
+augmentation:
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 0.0
+  translate: 0.1
+  scale: 0.5
+  shear: 0.0
+  perspective: 0.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 1.0
+  mixup: 0.1  # YOLOv11启用mixup
+  copy_paste: 0.1  # YOLOv11启用copy_paste
+
+# YOLOv11特有配置
+yolov11:
+  # 模型优化
+  use_amp: true  # 自动混合精度
+  use_ema: true  # 指数移动平均
+  ema_decay: 0.9999
+  
+  # 推理优化
+  fuse_conv_bn: true  # 融合卷积和BN
+  optimize_nms: true  # 优化NMS
+  
+  # 训练优化
+  gradient_accumulation: 1  # 梯度累积
+  sync_bn: false  # 同步BN 

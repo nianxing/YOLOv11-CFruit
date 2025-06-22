@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from .cbam import CBAM, CBAMBlock
+from .c2f import C2f, C2fWithAttention
 
 
 class ConvBNSiLU(nn.Module):
@@ -21,7 +22,7 @@ class ConvBNSiLU(nn.Module):
 
 
 class CSPBlock(nn.Module):
-    """CSP (Cross Stage Partial) 块"""
+    """CSP (Cross Stage Partial) 块 - 兼容性保留"""
     
     def __init__(self, in_channels, out_channels, num_blocks=1, 
                  shortcut=True, expansion=0.5, cbam=True, cbam_ratio=16):
@@ -74,42 +75,68 @@ class Bottleneck(nn.Module):
         return self.cbam(x + self.cv2(self.cv1(x))) if self.use_add else self.cbam(self.cv2(self.cv1(x)))
 
 
-class CSPDarknet(nn.Module):
-    """CSPDarknet主干网络"""
+class CSPDarknetV11(nn.Module):
+    """YOLOv11版本的CSPDarknet主干网络"""
     
-    def __init__(self, base_channels=64, base_depth=3, cbam=True, cbam_ratio=16):
-        super(CSPDarknet, self).__init__()
+    def __init__(self, base_channels=64, base_depth=3, cbam=True, cbam_ratio=16, use_c2f=True):
+        super(CSPDarknetV11, self).__init__()
+        
+        self.use_c2f = use_c2f
         
         # 初始卷积层
         self.conv1 = ConvBNSiLU(3, base_channels, 3, 2, 1)
         self.conv2 = ConvBNSiLU(base_channels, base_channels * 2, 3, 2, 1)
         
-        # CSP阶段1
-        self.csp1 = CSPBlock(
-            base_channels * 2, base_channels * 2, 
-            base_depth, True, 1.0, cbam, cbam_ratio
-        )
+        # 第一阶段 - 使用C2f或CSP
+        if use_c2f:
+            self.stage1 = C2fWithAttention(
+                base_channels * 2, base_channels * 2, 
+                base_depth, True, 1.0, cbam, cbam_ratio
+            )
+        else:
+            self.stage1 = CSPBlock(
+                base_channels * 2, base_channels * 2, 
+                base_depth, True, 1.0, cbam, cbam_ratio
+            )
         self.conv3 = ConvBNSiLU(base_channels * 2, base_channels * 4, 3, 2, 1)
         
-        # CSP阶段2
-        self.csp2 = CSPBlock(
-            base_channels * 4, base_channels * 4, 
-            base_depth * 2, True, 1.0, cbam, cbam_ratio
-        )
+        # 第二阶段
+        if use_c2f:
+            self.stage2 = C2fWithAttention(
+                base_channels * 4, base_channels * 4, 
+                base_depth * 2, True, 1.0, cbam, cbam_ratio
+            )
+        else:
+            self.stage2 = CSPBlock(
+                base_channels * 4, base_channels * 4, 
+                base_depth * 2, True, 1.0, cbam, cbam_ratio
+            )
         self.conv4 = ConvBNSiLU(base_channels * 4, base_channels * 8, 3, 2, 1)
         
-        # CSP阶段3
-        self.csp3 = CSPBlock(
-            base_channels * 8, base_channels * 8, 
-            base_depth * 3, True, 1.0, cbam, cbam_ratio
-        )
+        # 第三阶段
+        if use_c2f:
+            self.stage3 = C2fWithAttention(
+                base_channels * 8, base_channels * 8, 
+                base_depth * 3, True, 1.0, cbam, cbam_ratio
+            )
+        else:
+            self.stage3 = CSPBlock(
+                base_channels * 8, base_channels * 8, 
+                base_depth * 3, True, 1.0, cbam, cbam_ratio
+            )
         self.conv5 = ConvBNSiLU(base_channels * 8, base_channels * 16, 3, 2, 1)
         
-        # CSP阶段4
-        self.csp4 = CSPBlock(
-            base_channels * 16, base_channels * 16, 
-            base_depth, False, 1.0, cbam, cbam_ratio
-        )
+        # 第四阶段
+        if use_c2f:
+            self.stage4 = C2fWithAttention(
+                base_channels * 16, base_channels * 16, 
+                base_depth, False, 1.0, cbam, cbam_ratio
+            )
+        else:
+            self.stage4 = CSPBlock(
+                base_channels * 16, base_channels * 16, 
+                base_depth, False, 1.0, cbam, cbam_ratio
+            )
         
         # 全局平均池化
         self.gap = nn.AdaptiveAvgPool2d(1)
@@ -119,13 +146,13 @@ class CSPDarknet(nn.Module):
         # 特征提取
         x1 = self.conv1(x)      # 1/2
         x2 = self.conv2(x1)     # 1/4
-        x3 = self.csp1(x2)      # 1/4
+        x3 = self.stage1(x2)    # 1/4
         x4 = self.conv3(x3)     # 1/8
-        x5 = self.csp2(x4)      # 1/8
+        x5 = self.stage2(x4)    # 1/8
         x6 = self.conv4(x5)     # 1/16
-        x7 = self.csp3(x6)      # 1/16
+        x7 = self.stage3(x6)    # 1/16
         x8 = self.conv5(x7)     # 1/32
-        x9 = self.csp4(x8)      # 1/32
+        x9 = self.stage4(x8)    # 1/32
         
         # 分类头（用于预训练）
         if self.training:
@@ -135,4 +162,12 @@ class CSPDarknet(nn.Module):
             return out
         
         # 返回多尺度特征用于目标检测
-        return [x3, x5, x7, x9] 
+        return [x3, x5, x7, x9]
+
+
+# 保持向后兼容性
+class CSPDarknet(CSPDarknetV11):
+    """向后兼容的CSPDarknet类"""
+    
+    def __init__(self, base_channels=64, base_depth=3, cbam=True, cbam_ratio=16):
+        super(CSPDarknet, self).__init__(base_channels, base_depth, cbam, cbam_ratio, use_c2f=False) 

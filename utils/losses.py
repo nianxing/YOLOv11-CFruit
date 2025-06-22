@@ -174,20 +174,20 @@ class DFLoss(nn.Module):
         return target_dist
 
 
-class YOLOv8Loss(nn.Module):
-    """YOLOv8总损失函数"""
+class YOLOv11Loss(nn.Module):
+    """YOLOv11总损失函数 - 改进版本"""
     
     def __init__(self, num_classes=1, reg_max=16, loss_weights=None):
-        super(YOLOv8Loss, self).__init__()
+        super(YOLOv11Loss, self).__init__()
         
         self.num_classes = num_classes
         self.reg_max = reg_max
         
-        # 默认损失权重
+        # 默认损失权重 - YOLOv11优化
         if loss_weights is None:
             loss_weights = {
-                'cls': 0.5,
-                'box': 7.5,
+                'cls': 0.3,  # 降低分类损失权重
+                'box': 8.0,  # 增加边界框损失权重
                 'dfl': 1.5
             }
         self.loss_weights = loss_weights
@@ -232,7 +232,7 @@ class YOLOv8Loss(nn.Module):
             dfl_loss = self.dfl_loss(reg_pred, target_reg)
             total_dfl_loss += dfl_loss
         
-        # 计算总损失
+        # 计算总损失 - YOLOv11优化
         total_loss = (
             self.loss_weights['cls'] * total_cls_loss +
             self.loss_weights['box'] * total_box_loss +
@@ -246,4 +246,18 @@ class YOLOv8Loss(nn.Module):
             'dfl_loss': total_dfl_loss
         }
         
-        return total_loss, loss_dict 
+        return total_loss, loss_dict
+
+
+# 保持向后兼容性
+class YOLOv8Loss(YOLOv11Loss):
+    """向后兼容的YOLOv8损失函数"""
+    
+    def __init__(self, num_classes=1, reg_max=16, loss_weights=None):
+        if loss_weights is None:
+            loss_weights = {
+                'cls': 0.5,
+                'box': 7.5,
+                'dfl': 1.5
+            }
+        super(YOLOv8Loss, self).__init__(num_classes, reg_max, loss_weights) 
