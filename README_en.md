@@ -60,7 +60,7 @@ YOLOv11-CFruit/
 ## 🚀 Quick Start
 
 ### Requirements
-- Python 3.8+
+- Python 3.8+ (推荐 Python 3.12+)
 - PyTorch 2.0+
 - CUDA 11.0+ (GPU recommended)
 
@@ -80,13 +80,17 @@ install.bat
 chmod +x install_linux.sh
 ./install_linux.sh
 
-# Method 2: Manual installation
+# Method 2: Python 3.12 specific installation
+chmod +x install_python312.sh
+./install_python312.sh
+
+# Method 3: Manual installation
 sudo apt update  # Ubuntu/Debian
 sudo apt install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libgtk-3-0
 pip install -r requirements.txt
 pip install -e .
 
-# Method 3: If you encounter OpenCV issues
+# Method 4: If you encounter OpenCV issues
 chmod +x fix_opencv_linux.sh
 ./fix_opencv_linux.sh
 ```
@@ -103,7 +107,7 @@ pip install -e .
 
 #### Docker (Recommended for Linux)
 ```bash
-# Build and run with Docker
+# Build and run with Docker (Python 3.12)
 docker build -t yolov11-cfruit .
 docker run -it --rm -v $(pwd):/workspace yolov11-cfruit
 
@@ -116,8 +120,18 @@ docker-compose up -d yolov11-cfruit-gpu
 docker-compose exec yolov11-cfruit-gpu bash
 ```
 
-### Troubleshooting OpenCV Issues
+### Verify Installation
+```bash
+# Basic test
+python test_project.py
 
+# Python 3.12 compatibility check
+python check_python312.py
+```
+
+### Troubleshooting
+
+#### OpenCV Issues
 If you encounter `libGL.so.1: cannot open shared object file` error on Linux:
 
 1. **Quick Fix**: Run the fix script
@@ -141,14 +155,43 @@ If you encounter `libGL.so.1: cannot open shared object file` error on Linux:
 
 3. **Alternative**: Use Docker
    ```bash
-   docker run -it --rm -v $(pwd):/workspace python:3.9 bash
+   docker run -it --rm -v $(pwd):/workspace python:3.12 bash
    cd /workspace && pip install -r requirements.txt
    ```
 
-### Verify Installation
-```bash
-python test_project.py
-```
+#### Python 3.12 Compatibility
+If you encounter compatibility issues with Python 3.12:
+
+1. **Check compatibility**: Run the compatibility check
+   ```bash
+   python check_python312.py
+   ```
+
+2. **Update packages**: Manually update problematic packages
+   ```bash
+   pip install --upgrade numpy pandas scipy scikit-learn
+   ```
+
+3. **Use specific versions**: Install compatible versions
+   ```bash
+   pip install "numpy>=1.24.0" "pandas>=2.0.0" "scipy>=1.11.0"
+   ```
+
+#### Docker Issues
+If you encounter Docker permission issues:
+
+1. **Run as administrator** (Windows)
+2. **Add user to docker group** (Linux)
+   ```bash
+   sudo usermod -aG docker $USER
+   newgrp docker
+   ```
+3. **Use WSL2** (Windows)
+   ```bash
+   wsl
+   cd /mnt/d/code/YOLOv8-CFruit
+   docker build -t yolov11-cfruit .
+   ```
 
 ## 📖 Configuration & Usage
 
