@@ -1,0 +1,28 @@
+# Windows Docker环境手动设置命令
+# 请以管理员身份在PowerShell中逐行执行这些命令
+
+# 1. 启用Hyper-V功能
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+
+# 2. 启用容器功能
+Enable-WindowsOptionalFeature -Online -FeatureName Containers
+
+# 3. 启用Windows子系统for Linux (WSL2)
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+
+# 4. 创建必要的目录
+New-Item -ItemType Directory -Path "data" -Force
+New-Item -ItemType Directory -Path "checkpoints" -Force
+New-Item -ItemType Directory -Path "output" -Force
+
+# 5. 验证Docker安装（安装Docker Desktop后执行）
+docker --version
+docker-compose --version
+docker run hello-world
+
+# 6. 启动项目容器
+docker-compose up -d yolov11-cfruit
+
+# 7. 进入容器
+docker exec -it yolov11-cfruit bash 
