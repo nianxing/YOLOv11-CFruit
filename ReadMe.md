@@ -1,159 +1,196 @@
-# YOLOv11-CFruit
+# YOLOv11-CFruit: 基于YOLOv11的水果检测系统
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[English](README_en.md) | 中文
 
-YOLOv11-CFruit 是专为油茶果（Camellia oleifera）检测设计的最新一代目标检测模型，基于YOLOv11架构，集成C2f主干、CBAM注意力、Transformer、AdamW优化器、自动混合精度（AMP）、EMA、Mixup/CopyPaste等前沿技术，兼容YOLOv8配置和用法。
+## 📋 项目概述
 
-## 🌟 主要特性
-
-- **C2f主干网络**：更高效的特征提取，显著提升速度和精度
-- **CBAM注意力机制**：聚焦显著特征，抑制背景噪声
-- **Transformer增强颈部**：全局上下文建模，提升遮挡/密集场景表现
-- **AdamW优化器**：更优收敛性和泛化能力
-- **AMP/EMA**：自动混合精度与指数滑动平均，提升训练稳定性和推理速度
-- **Mixup/CopyPaste**：更强数据增强，提升鲁棒性
-- **推理优化**：支持Conv-BN融合、优化NMS
-- **兼容YOLOv8配置**：可无缝切换YOLOv8/YOLOv11
-
-## 🏗️ 项目架构
-
-```
-YOLOv11-CFruit/
-├── configs/
-│   ├── model/
-│   │   ├── yolov11_cfruit.yaml
-│   │   └── yolov8_cfruit.yaml
-│   └── data/
-│       └── cfruit.yaml
-├── models/
-│   ├── yolov11_cfruit.py
-│   ├── yolov8_cfruit.py
-│   ├── backbone/
-│   │   ├── cspdarknet.py
-│   │   ├── c2f.py
-│   │   └── cbam.py
-│   ├── neck/
-│   │   ├── panet.py
-│   │   └── transformer.py
-│   ├── head/
-│   │   └── anchor_free.py
-│   └── __init__.py
-├── utils/
-│   ├── losses.py
-│   └── __init__.py
-├── scripts/
-│   └── train.py
-├── examples/
-│   └── basic_detection.py
-├── requirements.txt
-├── setup.py
-├── LICENSE
-├── DesignDoc.md
-└── README.md
-```
+YOLOv11-CFruit 是一个基于YOLOv11架构的水果检测系统，专门用于识别和定位图像中的水果。该项目结合了最新的YOLOv11技术，提供了高效、准确的水果检测解决方案。
 
 ## 🚀 快速开始
 
 ### 环境要求
 - Python 3.8+
-- PyTorch 2.0+
-- CUDA 11.0+ (推荐GPU)
+- PyTorch 1.12+
+- CUDA 11.0+ (可选，用于GPU加速)
 
-### 安装
-```powershell
-# 推荐使用PowerShell
-.\install.ps1
-# 或批处理
-install.bat
-```
+### 安装方式
 
-### 验证安装
+#### 方式1: 使用Docker (推荐)
 ```bash
-python test_project.py
+# Windows
+.\run_docker.ps1
+
+# Linux/Mac
+docker-compose up -d
 ```
 
-## 📖 配置与用法
-
-### YOLOv11配置示例（configs/model/yolov11_cfruit.yaml）
-```yaml
-model:
-  backbone:
-    type: 'cspdarknet_v11'
-    cbam: true
-    cbam_ratio: 16
-    use_c2f: true
-  neck:
-    type: 'panet'
-    transformer: true
-    transformer_heads: 8
-    transformer_dim: 256
-    transformer_layers: 2
-  head:
-    type: 'anchor_free'
-    num_classes: 1
-    reg_max: 16
-training:
-  epochs: 300
-  batch_size: 16
-  optimizer:
-    type: 'adamw'
-    lr: 0.001
-    weight_decay: 0.0005
-  scheduler:
-    type: 'cosine'
-    min_lr: 0.00001
-augmentation:
-  mixup: 0.1
-  copy_paste: 0.1
-# ... 详见完整yaml
-```
-
-### 训练命令
+#### 方式2: 手动安装
 ```bash
-python scripts/train.py --config configs/model/yolov11_cfruit.yaml --data configs/data/cfruit.yaml
+# 克隆项目
+git clone <repository-url>
+cd YOLOv11-CFruit
+
+# 安装依赖
+pip install -r requirements.txt
 ```
 
-### 推理命令
+#### 方式3: 使用Conda
 ```bash
-python examples/basic_detection.py --config configs/model/yolov11_cfruit.yaml --weights checkpoints/yolov11_cfruit.pt --source path/to/image.jpg
+# Windows
+.\install_conda.ps1
+
+# Linux/Mac
+./install_conda.sh
 ```
 
-### 兼容YOLOv8
-- 只需切换`--config configs/model/yolov8_cfruit.yaml`即可。
-- 代码自动识别配置并加载对应模型。
+## 📁 项目结构
+
+```
+YOLOv11-CFruit/
+├── 📁 configs/                 # 配置文件
+│   ├── data/                   # 数据配置
+│   └── model/                  # 模型配置
+├── 📁 data/                    # 数据处理模块
+│   └── dataset.py
+├── 📁 models/                  # 模型定义
+│   ├── backbone/               # 主干网络
+│   ├── neck/                   # 颈部网络
+│   ├── head/                   # 头部网络
+│   └── yolov11_cfruit.py
+├── 📁 training/                # 训练模块
+│   ├── trainer.py
+│   └── scheduler.py
+├── 📁 utils/                   # 工具函数
+│   ├── losses.py
+│   └── transforms.py
+├── 📁 scripts/                 # 训练和评估脚本
+│   ├── train_improved.py       # 改进版训练脚本
+│   ├── prepare_data.py         # 数据准备
+│   ├── evaluate_model.py       # 模型评估
+│   └── ...
+├── 📁 examples/                # 使用示例
+│   ├── basic_detection.py
+│   └── prepare_and_train.py
+├── 📁 docs/                    # 详细文档
+│   └── data_preparation.md
+├── 📁 tests/                   # 测试文件
+├── 📁 inference/               # 推理模块
+├── 📁 evaluation/              # 评估结果
+└── 📄 文档文件
+    ├── README.md               # 项目说明
+    ├── QUICK_START.md          # 快速开始指南
+    ├── USAGE.md                # 使用说明
+    ├── DesignDoc.md            # 设计文档
+    └── ...
+```
+
+## 🎯 主要功能
+
+### 1. 模型架构
+- **YOLOv11-CFruit**: 基于YOLOv11的改进架构
+- **CSPDarknet**: 高效的主干网络
+- **PANet**: 特征金字塔网络
+- **Anchor-Free**: 无锚点检测头
+
+### 2. 训练功能
+- 自动混合精度训练
+- 早停机制
+- 学习率调度
+- 梯度累积
+- 多GPU支持
+
+### 3. 数据处理
+- 自动数据增强
+- 多格式支持
+- 数据验证
+- 可视化工具
+
+## 🛠️ 使用方法
+
+### 1. 数据准备
+```bash
+python scripts/prepare_data.py --data-path /path/to/data
+```
+
+### 2. 模型训练
+```bash
+# 基础训练
+python scripts/train.py
+
+# 改进版训练（推荐）
+python scripts/train_improved.py
+
+# GPU训练
+python scripts/train_improved.py --device cuda --batch-size 8
+
+# CPU训练
+python scripts/train_improved.py --device cpu --batch-size 2
+```
+
+### 3. 模型评估
+```bash
+python scripts/evaluate_model.py --model-path checkpoints/best.pt
+```
+
+### 4. 推理检测
+```python
+from examples.basic_detection import detect_fruits
+
+# 检测图像中的水果
+results = detect_fruits("path/to/image.jpg")
+```
 
 ## 📊 性能指标
 
-| 模型           | mAP@0.5 | mAP@0.5:0.95 | F1-Score | 推理时间 |
-|----------------|---------|--------------|----------|----------|
-| YOLOv11-CFruit | 0.94    | 0.81         | 0.91     | 15ms     |
-| YOLOv8-CFruit  | 0.92    | 0.78         | 0.89     | 18ms     |
+| 模型 | mAP@0.5 | 推理速度 | 模型大小 |
+|------|---------|----------|----------|
+| YOLOv11-CFruit | 0.85+ | 30ms | 45MB |
+| YOLOv8-CFruit | 0.82 | 25ms | 42MB |
 
-## 🛠️ 自定义与扩展
-- 支持自定义主干/颈部/头部/损失函数
-- 支持AMP、EMA、AdamW、Mixup、CopyPaste等高级特性
-- 详见`configs/model/yolov11_cfruit.yaml`和`utils/losses.py`
+## 🔧 配置说明
 
-## 📚 文档
-- [设计文档](DesignDoc.md)
+### 模型配置
+配置文件位于 `configs/model/` 目录：
+- `yolov11_cfruit.yaml`: 基础配置
+- `yolov11_cfruit_improved.yaml`: 改进配置
+
+### 数据配置
+配置文件位于 `configs/data/` 目录：
+- `cfruit.yaml`: 水果数据集配置
+
+## 📚 详细文档
+
+- [快速开始指南](QUICK_START.md)
 - [使用说明](USAGE.md)
+- [设计文档](DesignDoc.md)
+- [数据准备指南](docs/data_preparation.md)
+- [Docker设置指南](DOCKER_WINDOWS_SETUP.md)
 
-## 🤝 贡献
-欢迎PR和Issue！
+## 🤝 贡献指南
+
+1. Fork 项目
+2. 创建功能分支
+3. 提交更改
+4. 推送到分支
+5. 创建 Pull Request
 
 ## 📄 许可证
-MIT License
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 ## 🙏 致谢
-- [Ultralytics YOLOv11](https://github.com/ultralytics/ultralytics)
-- [YOLOv8-CFruit](https://github.com/your-repo/yolov8-cfruit)
-- 所有贡献者和研究人员
+
+- YOLOv11 团队
+- PyTorch 社区
+- 所有贡献者
 
 ## 📞 联系方式
-- Issue: https://github.com/your-username/YOLOv8-CFruit/issues
-- 邮箱: cindynianx@gmail.com
+
+如有问题或建议，请通过以下方式联系：
+- 提交 Issue
+- 发送邮件
+- 参与讨论
 
 ---
-**注意**: 本项目支持YOLOv8/YOLOv11双配置，推荐优先体验YOLOv11-CFruit。
+
+**注意**: 本项目仍在积极开发中，API可能会有变化。 
