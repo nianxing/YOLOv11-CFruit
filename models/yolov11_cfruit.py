@@ -27,7 +27,7 @@ class YOLOv11CFruit(nn.Module):
         
         # 特征通道数
         backbone_channels = [128, 256, 512, 1024]  # P3, P4, P5, P6
-        neck_channels = [256, 256, 256]  # 统一颈部特征通道数
+        neck_channels = [256, 256, 256, 256]  # 统一颈部特征通道数，匹配backbone的4个特征
         
         # 颈部网络 - 改进的PANet
         self.neck = PANetWithTransformer(
@@ -43,7 +43,7 @@ class YOLOv11CFruit(nn.Module):
             in_channels_list=neck_channels,
             num_classes=head_config.get('num_classes', 1),
             reg_max=head_config.get('reg_max', 16),
-            stride_list=[8, 16, 32]
+            stride_list=[8, 16, 32, 64]  # 对应4个特征层
         )
         
         # 初始化权重

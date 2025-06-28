@@ -70,8 +70,8 @@ class Trainer:
             
             # 前向传播
             self.optimizer.zero_grad()
-            outputs = self.model(images)
-            loss = self.criterion(outputs, targets)
+            cls_outputs, reg_outputs = self.model(images)
+            loss, loss_dict = self.criterion(cls_outputs, reg_outputs, targets)
             
             # 反向传播
             loss.backward()
@@ -113,8 +113,8 @@ class Trainer:
                 targets = batch['labels'].to(self.device)
                 
                 # 前向传播
-                outputs = self.model(images)
-                loss = self.criterion(outputs, targets)
+                cls_outputs, reg_outputs = self.model(images)
+                loss, loss_dict = self.criterion(cls_outputs, reg_outputs, targets)
                 
                 # 更新统计
                 total_loss += loss.item()
@@ -222,8 +222,8 @@ class Trainer:
                 images = batch['images'].to(self.device)
                 targets = batch['labels'].to(self.device)
                 
-                outputs = self.model(images)
-                loss = self.criterion(outputs, targets)
+                cls_outputs, reg_outputs = self.model(images)
+                loss, loss_dict = self.criterion(cls_outputs, reg_outputs, targets)
                 total_loss += loss.item()
         
         avg_loss = total_loss / num_batches

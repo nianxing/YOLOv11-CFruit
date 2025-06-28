@@ -200,39 +200,115 @@ class YOLOv11Loss(nn.Module):
     def forward(self, cls_preds, reg_preds, targets):
         """
         Args:
-            cls_preds: 分类预测列表 [P3, P4, P5]
-            reg_preds: 回归预测列表 [P3, P4, P5]
-            targets: 目标列表 [P3, P4, P5]
+            cls_preds: 分类预测列表 [P3, P4, P5, P6]
+            reg_preds: 回归预测列表 [P3, P4, P5, P6]
+            targets: 目标张量 [B, N, 5] (class_id, x1, y1, x2, y2)
         Returns:
             total_loss: 总损失
             loss_dict: 损失字典
         """
-        total_cls_loss = 0
-        total_box_loss = 0
-        total_dfl_loss = 0
+        # 初始化损失为tensor，确保梯度可以传播
+        device = cls_preds[0].device
+        total_cls_loss = torch.tensor(0.0, device=device, requires_grad=True)
+        total_box_loss = torch.tensor(0.0, device=device, requires_grad=True)
+        total_dfl_loss = torch.tensor(0.0, device=device, requires_grad=True)
         
-        for i, (cls_pred, reg_pred, target) in enumerate(zip(cls_preds, reg_preds, targets)):
-            if len(target) == 0:
+        batch_size = targets.shape[0]
+        num_valid_batches = 0
+        
+        # 处理每个批次
+        for b in range(batch_size):
+            batch_targets = targets[b]  # [N, 5]
+            
+            # 过滤掉填充的零标签
+            valid_targets = batch_targets[batch_targets[:, 0] >= 0]  # 假设-1表示填充
+            
+            if len(valid_targets) == 0:
                 continue
+            
+            num_valid_batches += 1
+            
+            # 处理每个特征层
+            for i, (cls_pred, reg_pred) in enumerate(zip(cls_preds, reg_preds)):
+                # 获取当前特征层的预测
+                cls_pred_b = cls_pred[b]  # [num_classes, H, W]
+                reg_pred_b = reg_pred[b]  # [4*reg_max, H, W]
                 
-            # 解析目标
-            target_cls = target[:, 0].long()
-            target_box = target[:, 1:5]
-            target_reg = target[:, 5:9]
-            
-            # 分类损失
-            cls_loss = self.cls_loss(cls_pred, target_cls)
-            total_cls_loss += cls_loss
-            
-            # 边界框损失
-            box_loss = self.box_loss(reg_pred, target_box)
-            total_box_loss += box_loss
-            
-            # DFL损失
-            dfl_loss = self.dfl_loss(reg_pred, target_reg)
-            total_dfl_loss += dfl_loss
+                # 获取特征层的空间尺寸
+                _, _, height, width = cls_pred_b.shape
+                
+                # 简化的标签分配 - 为每个目标分配最近的网格点
+                if len(valid_targets) > 0:
+                    # 计算网格坐标
+                    grid_y, grid_x = torch.meshgrid(
+                        torch.arange(height, device=device),
+                        torch.arange(width, device=device),
+                        indexing='ij'
+                    )
+                    
+                    # 为每个目标创建标签
+                    for target in valid_targets:
+                        class_id = int(target[0])
+                        x1, y1, x2, y2 = target[1:5]
+                        
+                        # 计算中心点
+                        center_x = (x1 + x2) / 2
+                        center_y = (y1 + y2) / 2
+                        
+                        # 找到最近的网格点
+                        grid_x_norm = center_x / (cls_pred_b.shape[3] * 8 * (2 ** i))  # 8是基础步长
+                        grid_y_norm = center_y / (cls_pred_b.shape[2] * 8 * (2 ** i))
+                        
+                        grid_x_idx = int(grid_x_norm * width)
+                        grid_y_idx = int(grid_y_norm * height)
+                        
+                        # 确保索引在有效范围内
+                        grid_x_idx = max(0, min(width - 1, grid_x_idx))
+                        grid_y_idx = max(0, min(height - 1, grid_y_idx))
+                        
+                        # 创建分类标签
+                        cls_target = torch.zeros(height, width, dtype=torch.long, device=device)
+                        cls_target[grid_y_idx, grid_x_idx] = class_id
+                        
+                        # 分类损失
+                        cls_loss = F.cross_entropy(
+                            cls_pred_b.view(-1, self.num_classes),
+                            cls_target.view(-1)
+                        )
+                        total_cls_loss = total_cls_loss + cls_loss
+                        
+                        # 回归损失 - 使用L1损失
+                        # 计算目标回归值
+                        target_reg = torch.zeros(4, device=device)
+                        target_reg[0] = (center_x - grid_x_idx * 8 * (2 ** i)) / (8 * (2 ** i))  # 相对偏移
+                        target_reg[1] = (center_y - grid_y_idx * 8 * (2 ** i)) / (8 * (2 ** i))
+                        target_reg[2] = (x2 - x1) / (8 * (2 ** i))  # 宽度
+                        target_reg[3] = (y2 - y1) / (8 * (2 ** i))  # 高度
+                        
+                        # 获取预测的回归值
+                        pred_reg = reg_pred_b[:, grid_y_idx, grid_x_idx]  # [4*reg_max]
+                        pred_reg = pred_reg.view(4, self.reg_max)
+                        
+                        # 回归损失
+                        reg_loss = F.l1_loss(pred_reg.mean(dim=1), target_reg)
+                        total_box_loss = total_box_loss + reg_loss
+                        
+                        # DFL损失
+                        dfl_loss = F.l1_loss(pred_reg, target_reg.unsqueeze(1).expand(-1, self.reg_max))
+                        total_dfl_loss = total_dfl_loss + dfl_loss
         
-        # 计算总损失 - YOLOv11优化
+        # 如果没有有效批次，返回零损失tensor
+        if num_valid_batches == 0:
+            total_loss = torch.tensor(0.0, device=device, requires_grad=True)
+            loss_dict = {
+                'total_loss': total_loss,
+                'cls_loss': total_cls_loss,
+                'box_loss': total_box_loss,
+                'dfl_loss': total_dfl_loss
+            }
+            return total_loss, loss_dict
+        
+        # 计算总损失
         total_loss = (
             self.loss_weights['cls'] * total_cls_loss +
             self.loss_weights['box'] * total_box_loss +

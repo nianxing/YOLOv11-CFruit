@@ -63,8 +63,8 @@ class C2f(nn.Module):
         self.cv3 = ConvBNSiLU(hidden_channels, hidden_channels, 1, 1)
         self.cv4 = ConvBNSiLU(hidden_channels, hidden_channels, 1, 1)
         
-        # 最终输出
-        self.cv5 = ConvBNSiLU(2 * hidden_channels, out_channels, 1, 1)
+        # 最终输出 - 修正为3 * hidden_channels（因为连接了3个分支）
+        self.cv5 = ConvBNSiLU(3 * hidden_channels, out_channels, 1, 1)
         
     def forward(self, x):
         # 分支1：直接路径
