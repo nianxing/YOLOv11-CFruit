@@ -27,11 +27,15 @@ class Resize:
     """调整图像尺寸"""
     
     def __init__(self, size):
-        self.size = size
+        # 处理size参数，支持单个整数或元组
+        if isinstance(size, (tuple, list)):
+            self.size = size
+        else:
+            self.size = (size, size)
     
     def __call__(self, image, bboxes=None):
         h, w = image.shape[:2]
-        new_h, new_w = self.size, self.size
+        new_h, new_w = self.size
         
         # 计算缩放比例
         scale_x = new_w / w

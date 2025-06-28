@@ -69,13 +69,13 @@ class PANet(nn.Module):
         self.pan_downsamples = nn.ModuleList()
         
         for i in range(len(in_channels_list) - 1):
-            # 特征融合卷积
+            # 特征融合卷积 - 输入通道数是out_channels_list[i] * 2（FPN融合后）
             self.pan_convs.append(
-                ConvBNSiLU(out_channels_list[i], out_channels_list[i], 3, 1, 1)
+                ConvBNSiLU(out_channels_list[i] * 2, out_channels_list[i], 3, 1, 1)
             )
-            # 下采样
+            # 下采样 - 输入通道数是out_channels_list[i] * 2（FPN融合后）
             self.pan_downsamples.append(
-                ConvBNSiLU(out_channels_list[i], out_channels_list[i], 3, 2, 1)
+                ConvBNSiLU(out_channels_list[i] * 2, out_channels_list[i], 3, 2, 1)
             )
         
         # SPPF模块
@@ -85,7 +85,7 @@ class PANet(nn.Module):
         if transformer:
             self.transformers = nn.ModuleList([
                 FeatureTransformer(
-                    out_channels_list[i], 
+                    out_channels_list[i] * 4,  # 由于FPN和PAN的特征融合，通道数翻4倍
                     transformer_dim, 
                     transformer_heads, 
                     transformer_layers,
@@ -97,6 +97,12 @@ class PANet(nn.Module):
             self.transformers = nn.ModuleList([
                 nn.Identity() for _ in range(len(out_channels_list))
             ])
+        
+        # 输出通道调整层 - 将特征融合后的通道数调整回期望的输出通道数
+        self.output_convs = nn.ModuleList([
+            ConvBNSiLU(out_channels_list[i] * 4, out_channels_list[i], 1, 1)
+            for i in range(len(out_channels_list))
+        ])
         
     def forward(self, features):
         """
@@ -134,6 +140,9 @@ class PANet(nn.Module):
             
             # 应用Transformer（如果启用）
             x = self.transformers[i](x)
+            
+            # 调整输出通道数
+            x = self.output_convs[i](x)
             
             pan_features.append(x)
         

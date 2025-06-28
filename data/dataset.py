@@ -86,9 +86,7 @@ class CFruitDataset(Dataset):
         
         # 应用变换
         if self.transform:
-            transformed = self.transform(image=img, bboxes=labels)
-            img = transformed['image']
-            labels = transformed['bboxes']
+            img, labels = self.transform(img, labels)
         
         # 转换为张量
         img = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
@@ -169,9 +167,22 @@ class CFruitDataLoader:
         
         images = torch.stack(images, dim=0)
         
+        # 处理标签 - 将列表转换为张量
+        # 由于每张图像的标签数量可能不同，我们需要填充到相同长度
+        max_labels = max(len(label) for label in labels)
+        if max_labels > 0:
+            # 创建填充后的标签张量
+            padded_labels = torch.zeros(len(labels), max_labels, 5, dtype=torch.float32)
+            for i, label in enumerate(labels):
+                if len(label) > 0:
+                    padded_labels[i, :len(label)] = label
+        else:
+            # 如果没有标签，创建空的张量
+            padded_labels = torch.zeros(len(labels), 0, 5, dtype=torch.float32)
+        
         return {
             'images': images,
-            'labels': labels,
+            'labels': padded_labels,
             'img_paths': img_paths,
             'img_sizes': img_sizes
         }

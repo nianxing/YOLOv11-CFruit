@@ -73,7 +73,7 @@ class PositionwiseFeedForward(nn.Module):
 class PositionalEncoding(nn.Module):
     """位置编码"""
     
-    def __init__(self, d_model, max_len=5000):
+    def __init__(self, d_model, max_len=50000):
         super(PositionalEncoding, self).__init__()
         
         pe = torch.zeros(max_len, d_model)
@@ -151,11 +151,17 @@ class FeatureTransformer(nn.Module):
         # 特征投影
         self.feature_projection = nn.Conv2d(in_channels, d_model, 1)
         
+        # 空间降采样以减少序列长度
+        self.spatial_pool = nn.AdaptiveAvgPool2d((32, 32))  # 将特征图降采样到32x32
+        
         # Transformer编码器
         self.transformer = TransformerEncoder(d_model, num_heads, num_layers, d_ff, dropout)
         
         # 输出投影
         self.output_projection = nn.Conv2d(d_model, in_channels, 1)
+        
+        # 上采样回原始尺寸
+        self.upsample = nn.Upsample(scale_factor=5, mode='bilinear', align_corners=False)  # 32*5=160
         
     def forward(self, x):
         batch_size, channels, height, width = x.size()
@@ -163,14 +169,20 @@ class FeatureTransformer(nn.Module):
         # 投影到d_model维度
         x = self.feature_projection(x)
         
+        # 空间降采样以减少序列长度
+        x = self.spatial_pool(x)  # (B, d_model, 32, 32)
+        
         # 重塑为序列形式 (batch_size, seq_len, d_model)
-        x = x.flatten(2).transpose(1, 2)  # (B, H*W, d_model)
+        x = x.flatten(2).transpose(1, 2)  # (B, 1024, d_model)
         
         # Transformer处理
         x = self.transformer(x)
         
         # 重塑回2D特征图
-        x = x.transpose(1, 2).view(batch_size, self.d_model, height, width)
+        x = x.transpose(1, 2).view(batch_size, self.d_model, 32, 32)
+        
+        # 上采样回原始尺寸
+        x = self.upsample(x)  # (B, d_model, height, width)
         
         # 输出投影
         x = self.output_projection(x)

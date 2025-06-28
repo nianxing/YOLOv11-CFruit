@@ -14,7 +14,7 @@ from PIL import Image
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.yolov8_cfruit import YOLOv8CFruit
+from models.yolov11_cfruit import YOLOv11CFruit
 
 
 def load_config(config_path):
@@ -126,7 +126,7 @@ def main():
     print(f"使用设备: {device}")
     
     # 创建模型
-    model = YOLOv8CFruit.from_pretrained(model_path, config)
+    model = YOLOv11CFruit.from_pretrained(model_path, config)
     model.to(device)
     model.eval()
     

@@ -19,8 +19,8 @@ import time
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.yolov8_cfruit import YOLOv8CFruit
-from data.dataset import CFruitDataset
+from models.yolov11_cfruit import YOLOv11CFruit
+from data.dataset import CFruitDataset, CFruitDataLoader
 from utils.losses import YOLOv8Loss
 from utils.transforms import get_transforms
 from training.trainer import Trainer
@@ -32,7 +32,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='YOLOv8-CFruit Training')
     
     # 配置文件
-    parser.add_argument('--config', type=str, default='configs/model/yolov8_cfruit.yaml',
+    parser.add_argument('--config', type=str, default='configs/model/yolov11_cfruit.yaml',
                        help='模型配置文件路径')
     parser.add_argument('--data', type=str, default='configs/data/cfruit.yaml',
                        help='数据集配置文件路径')
@@ -84,7 +84,7 @@ def load_config(config_path):
 
 def create_model(config, device):
     """创建模型"""
-    model = YOLOv8CFruit(config)
+    model = YOLOv11CFruit(config)
     model = model.to(device)
     
     # 打印模型信息
@@ -133,7 +133,8 @@ def create_dataloaders(data_config, batch_size, img_size, workers):
         shuffle=True,
         num_workers=workers,
         pin_memory=True,
-        drop_last=True
+        drop_last=True,
+        collate_fn=CFruitDataLoader.collate_fn
     )
     
     val_loader = DataLoader(
@@ -141,7 +142,8 @@ def create_dataloaders(data_config, batch_size, img_size, workers):
         batch_size=batch_size,
         shuffle=False,
         num_workers=workers,
-        pin_memory=True
+        pin_memory=True,
+        collate_fn=CFruitDataLoader.collate_fn
     )
     
     logging.info(f"训练集大小: {len(train_dataset)}")
@@ -156,6 +158,12 @@ def create_optimizer(model, config, args):
     
     if optimizer_config['type'] == 'adam':
         optimizer = optim.Adam(
+            model.parameters(),
+            lr=args.lr,
+            weight_decay=args.weight_decay
+        )
+    elif optimizer_config['type'] == 'adamw':
+        optimizer = optim.AdamW(
             model.parameters(),
             lr=args.lr,
             weight_decay=args.weight_decay
@@ -237,34 +245,35 @@ def main():
     # 创建训练器
     trainer = Trainer(
         model=model,
-        criterion=criterion,
+        train_loader=train_loader,
+        val_loader=val_loader,
         optimizer=optimizer,
         scheduler=scheduler,
+        criterion=criterion,
         device=device,
         save_dir=args.save_dir,
-        log_dir=args.log_dir
+        log_dir=args.log_dir,
+        save_interval=args.save_interval
     )
     
     # 恢复训练
-    start_epoch = 0
     if args.resume:
-        start_epoch = trainer.load_checkpoint(args.resume)
-        logging.info(f"从检查点恢复训练: {args.resume}, 起始轮数: {start_epoch}")
+        trainer.load_checkpoint(args.resume)
+        logging.info(f"从检查点恢复训练: {args.resume}")
     
     # 加载预训练权重
     if args.pretrained and not args.resume:
-        trainer.load_pretrained(args.pretrained)
+        # 加载预训练权重到模型
+        pretrained_state = torch.load(args.pretrained, map_location=device)
+        if 'model_state_dict' in pretrained_state:
+            model.load_state_dict(pretrained_state['model_state_dict'])
+        else:
+            model.load_state_dict(pretrained_state)
         logging.info(f"加载预训练权重: {args.pretrained}")
     
     # 开始训练
     logging.info("开始训练...")
-    trainer.train(
-        train_loader=train_loader,
-        val_loader=val_loader,
-        epochs=args.epochs,
-        start_epoch=start_epoch,
-        save_interval=args.save_interval
-    )
+    trainer.train(epochs=args.epochs)
     
     logging.info("训练完成!")
 

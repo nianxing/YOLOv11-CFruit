@@ -154,13 +154,6 @@ class CSPDarknetV11(nn.Module):
         x8 = self.conv5(x7)     # 1/32
         x9 = self.stage4(x8)    # 1/32
         
-        # 分类头（用于预训练）
-        if self.training:
-            out = self.gap(x9)
-            out = out.view(out.size(0), -1)
-            out = self.fc(out)
-            return out
-        
         # 返回多尺度特征用于目标检测
         return [x3, x5, x7, x9]
 

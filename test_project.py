@@ -13,10 +13,10 @@ def test_imports():
     print("测试模块导入...")
     
     try:
-        from models.yolov8_cfruit import YOLOv8CFruit
-        print("✓ YOLOv8CFruit 导入成功")
+        from models.yolov11_cfruit import YOLOv11CFruit
+        print("✓ YOLOv11CFruit 导入成功")
     except ImportError as e:
-        print(f"✗ YOLOv8CFruit 导入失败: {e}")
+        print(f"✗ YOLOv11CFruit 导入失败: {e}")
         return False
     
     try:
@@ -88,7 +88,7 @@ def test_model_creation():
             config = yaml.safe_load(f)
         
         # 创建模型
-        model = YOLOv8CFruit(config)
+        model = YOLOv11CFruit(config)
         print("✓ 模型创建成功")
         
         # 测试前向传播
