@@ -1,15 +1,22 @@
 # YOLOv11-CFruit Anaconda安装配置指南
 
-## 概述
-本指南将帮助您在Azure虚拟机上使用Anaconda安装配置YOLOv11-CFruit项目，避免Python包依赖冲突问题。
+## 📋 概述
+本指南将帮助您使用Anaconda安装配置YOLOv11-CFruit项目，避免Python包依赖冲突问题。
 
-## 系统要求
-- Azure Linux/Windows虚拟机
+---
+
+**最后更新：2024年6月**  
+**文档版本：v1.0**
+
+---
+
+## 🖥️ 系统要求
+- Linux/Windows/macOS系统
 - 至少4GB RAM
 - 至少20GB可用磁盘空间
 - 网络连接
 
-## 快速安装
+## 🚀 快速安装
 
 ### Linux系统
 ```bash
@@ -25,20 +32,20 @@ chmod +x install_conda.sh
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 # 3. 运行安装脚本
-.\install_conda.ps1
+./install_conda.ps1
 ```
 
-## 手动安装步骤
+## 📦 手动安装步骤
 
 ### 1. 安装Anaconda
 
 #### Linux
 ```bash
 # 下载Anaconda
-wget https://repo.anaconda.com/archive/Anaconda3-2023.09-0-Linux-x86_64.sh
+wget https://repo.anaconda.com/archive/Anaconda3-2024.02-1-Linux-x86_64.sh
 
 # 安装
-bash Anaconda3-2023.09-0-Linux-x86_64.sh -b -p $HOME/anaconda3
+bash Anaconda3-2024.02-1-Linux-x86_64.sh -b -p $HOME/anaconda3
 
 # 初始化
 $HOME/anaconda3/bin/conda init bash
@@ -48,7 +55,7 @@ source ~/.bashrc
 #### Windows
 ```powershell
 # 下载Anaconda
-Invoke-WebRequest -Uri "https://repo.anaconda.com/archive/Anaconda3-2023.09-0-Windows-x86_64.exe" -OutFile "anaconda.exe"
+Invoke-WebRequest -Uri "https://repo.anaconda.com/archive/Anaconda3-2024.02-1-Windows-x86_64.exe" -OutFile "anaconda.exe"
 
 # 安装
 Start-Process -FilePath "anaconda.exe" -ArgumentList "/S /D=$env:USERPROFILE\anaconda3" -Wait
@@ -91,7 +98,7 @@ conda install pyyaml tensorboard tqdm requests pytest
 pip install albumentations timm thop black flake8
 ```
 
-## 验证安装
+## ✅ 验证安装
 
 ### 1. 检查环境
 ```bash
@@ -122,7 +129,7 @@ python test_project.py
 python examples/basic_detection.py
 ```
 
-## 常见问题解决
+## 🔧 常见问题解决
 
 ### 1. 包冲突问题
 ```bash
@@ -150,7 +157,7 @@ chmod +x install_conda.sh
 # Windows: 以管理员身份运行PowerShell
 ```
 
-## 使用说明
+## 🛠️ 使用说明
 
 ### 激活环境
 ```bash
@@ -159,12 +166,16 @@ conda activate yolov11-cfruit
 
 ### 运行训练
 ```bash
-python scripts/train.py --config configs/model/yolov11_cfruit.yaml
+# 改进版训练（推荐）
+python scripts/train_improved.py --config configs/model/yolov11_cfruit_improved.yaml --data configs/data/cfruit.yaml
+
+# 简化训练
+python scripts/simple_train.py --config configs/model/yolov11_cfruit.yaml --data configs/data/cfruit.yaml
 ```
 
 ### 运行检测
 ```bash
-python examples/basic_detection.py --model path/to/model.pth --image path/to/image.jpg
+python examples/basic_detection.py --model checkpoints/best.pt --image path/to/image.jpg
 ```
 
 ### 退出环境
@@ -172,7 +183,7 @@ python examples/basic_detection.py --model path/to/model.pth --image path/to/ima
 conda deactivate
 ```
 
-## 优势
+## ⭐ 优势
 
 使用Anaconda的优势：
 1. **依赖管理**: conda自动处理包依赖关系
@@ -181,18 +192,24 @@ conda deactivate
 4. **跨平台**: 支持Linux、Windows、macOS
 5. **预编译包**: 减少编译时间和错误
 
-## 注意事项
+## ⚠️ 注意事项
 
-1. 确保Azure虚拟机有足够的磁盘空间
+1. 确保系统有足够的磁盘空间
 2. 建议使用Python 3.11版本以获得最佳兼容性
 3. 如果使用GPU，确保安装对应的CUDA版本
 4. 定期更新conda和包版本
 5. 备份重要的conda环境配置
 
-## 技术支持
+## 📞 技术支持
 
 如果遇到问题，请：
 1. 检查错误日志
 2. 确认系统要求
 3. 尝试重新创建环境
-4. 查看项目文档 
+4. 查看项目文档
+
+## 🔗 相关链接
+
+- [快速开始指南](QUICK_START.md)
+- [使用说明](USAGE.md)
+- [Docker设置指南](DOCKER_WINDOWS_SETUP.md) 

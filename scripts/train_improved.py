@@ -208,6 +208,10 @@ def parse_args():
 def main():
     args = parse_args()
     
+    # 创建保存目录（在设置日志之前）
+    os.makedirs(args.save_dir, exist_ok=True)
+    os.makedirs(args.log_dir, exist_ok=True)
+    
     # 设置日志
     logging.basicConfig(
         level=logging.INFO,
@@ -217,10 +221,6 @@ def main():
             logging.StreamHandler()
         ]
     )
-    
-    # 创建保存目录
-    os.makedirs(args.save_dir, exist_ok=True)
-    os.makedirs(args.log_dir, exist_ok=True)
     
     # 加载配置
     with open(args.config, 'r', encoding='utf-8') as f:

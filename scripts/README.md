@@ -2,6 +2,13 @@
 
 本目录包含了YOLOv11-CFruit项目的所有脚本文件，用于训练、评估、数据处理等任务。
 
+---
+
+**最后更新：2024年6月**  
+**文档版本：v1.0**
+
+---
+
 ## 📁 脚本分类
 
 ### 🎯 训练脚本
@@ -14,32 +21,29 @@
   - 自动混合精度训练
   - 梯度累积
   - 详细的训练监控
-- **使用**: `python scripts/train_improved.py`
+- **使用**: `python scripts/train_improved.py --device cuda --batch-size 8 --save-dir checkpoints`
+
+#### `simple_train.py` ⭐ (简化版)
+- **功能**: 简化训练脚本，易于调试
+- **特点**: 简单易用，适合入门和调试
+- **使用**: `python scripts/simple_train.py --device cuda --batch-size 8 --save-dir checkpoints`
 
 #### `train.py`
 - **功能**: 基础训练脚本
-- **特点**: 简单易用，适合入门
+- **特点**: 标准训练流程
 - **使用**: `python scripts/train.py`
-
-#### `train_memory_optimized.py`
-- **功能**: 内存优化版训练脚本
-- **特点**: 适用于显存较小的GPU
-- **使用**: `python scripts/train_memory_optimized.py`
-
-#### `quick_train.py`
-- **功能**: 快速训练脚本
-- **特点**: 预设参数，一键训练
-- **使用**: `python scripts/quick_train.py`
 
 ### 📊 数据处理脚本
 
-#### `prepare_data.py`
-- **功能**: 数据预处理和准备
+#### `prepare_data_circle_fixed.py` ⭐ (推荐)
+- **功能**: 数据预处理和准备（支持圆形标注）
 - **特点**: 
+  - 支持labelme JSON格式
+  - 支持圆形标注转换为矩形框
   - 自动数据增强
   - 格式转换
   - 数据验证
-- **使用**: `python scripts/prepare_data.py --data-path /path/to/data`
+- **使用**: `python scripts/prepare_data_circle_fixed.py --input-dir /path/to/data --output-dir data/cfruit --class-names cfruit`
 
 #### `check_data.py`
 - **功能**: 数据质量检查
@@ -47,7 +51,22 @@
   - 检查图像和标签一致性
   - 统计数据集信息
   - 检测异常数据
-- **使用**: `python scripts/check_data.py --data-path /path/to/data`
+- **使用**: `python scripts/check_data.py --data-dir data/cfruit`
+
+#### `quick_rename_labels.py`
+- **功能**: 快速标签重命名
+- **特点**: 
+  - 批量重命名JSON标签
+  - 支持备份和预览
+- **使用**: `python scripts/quick_rename_labels.py --input-dir /path/to/json --old-label youcha --new-label cfruit`
+
+#### `rename_labels.py`
+- **功能**: 完整标签重命名工具
+- **特点**: 
+  - 递归处理目录
+  - 支持多种标签格式
+  - 详细日志记录
+- **使用**: `python scripts/rename_labels.py --input-dir /path/to/json --old-label youcha --new-label cfruit`
 
 ### 🔍 评估脚本
 
@@ -62,7 +81,7 @@
 #### `quick_test.py`
 - **功能**: 快速模型测试
 - **特点**: 简单测试，快速验证
-- **使用**: `python scripts/quick_test.py --model-path checkpoints/best.pt`
+- **使用**: `python scripts/quick_test.py --model checkpoints/best.pt --data-dir data/cfruit/val`
 
 ### 📈 可视化脚本
 
@@ -74,31 +93,53 @@
   - 指标趋势
 - **使用**: `python scripts/visualize_training.py --log-dir logs`
 
-#### `quick_visualize.py`
-- **功能**: 快速数据可视化
-- **特点**: 
-  - 数据集样本展示
-  - 检测结果可视化
-  - 批量图像处理
-- **使用**: `python scripts/quick_visualize.py --data-path /path/to/data`
-
 #### `show_training_results.py`
 - **功能**: 训练结果展示
 - **特点**: 
   - 训练日志分析
   - 性能指标展示
   - 结果对比
-- **使用**: `python scripts/show_training_results.py --log-dir logs`
+- **使用**: `python scripts/show_training_results.py --checkpoint checkpoints/best.pt`
 
 ### 🔄 自动化脚本
 
-#### `auto_train_and_visualize.sh`
+#### `auto_train_and_visualize.sh` ⭐ (推荐)
 - **功能**: 自动化训练和可视化
 - **特点**: 
   - 一键完成训练
   - 自动生成可视化报告
   - 批量处理
 - **使用**: `bash scripts/auto_train_and_visualize.sh`
+
+#### `quick_auto_train.sh`
+- **功能**: 快速自动训练
+- **特点**: 
+  - 快速测试训练流程
+  - 预设参数
+- **使用**: `bash scripts/quick_auto_train.sh`
+
+### 🛠️ GPU相关脚本
+
+#### `fix_azure_gpu.sh`
+- **功能**: Azure GPU环境修复
+- **特点**: 
+  - 修复NVIDIA驱动问题
+  - 配置GPU环境
+- **使用**: `bash scripts/fix_azure_gpu.sh`
+
+#### `quick_azure_fix.sh`
+- **功能**: 快速Azure GPU修复
+- **特点**: 
+  - 快速修复常见问题
+  - 简化操作流程
+- **使用**: `bash scripts/quick_azure_fix.sh`
+
+#### `fix_persistenced.sh`
+- **功能**: NVIDIA持久化服务修复
+- **特点**: 
+  - 修复持久化服务
+  - 优化GPU性能
+- **使用**: `bash scripts/fix_persistenced.sh`
 
 ## 🚀 使用指南
 
@@ -116,20 +157,20 @@ python -c "import torch; print(torch.__version__)"
 
 ### 2. 数据准备
 ```bash
-# 准备数据集
-python scripts/prepare_data.py --data-path /path/to/data
+# 准备数据集（支持圆形标注）
+python scripts/prepare_data_circle_fixed.py --input-dir /path/to/data --output-dir data/cfruit --class-names cfruit
 
 # 检查数据质量
-python scripts/check_data.py --data-path /path/to/data
+python scripts/check_data.py --data-dir data/cfruit
 ```
 
 ### 3. 模型训练
 ```bash
 # 使用改进版训练脚本（推荐）
-python scripts/train_improved.py --device auto --epochs 100
+python scripts/train_improved.py --device cuda --batch-size 8 --save-dir checkpoints
 
-# 或使用快速训练
-python scripts/quick_train.py
+# 或使用简化训练
+python scripts/simple_train.py --device cuda --batch-size 8 --save-dir checkpoints
 ```
 
 ### 4. 模型评估
@@ -138,7 +179,7 @@ python scripts/quick_train.py
 python scripts/evaluate_model.py --model-path checkpoints/best.pt
 
 # 快速测试
-python scripts/quick_test.py --model-path checkpoints/best.pt
+python scripts/quick_test.py --model checkpoints/best.pt --data-dir data/cfruit/val
 ```
 
 ### 5. 结果可视化
@@ -146,8 +187,8 @@ python scripts/quick_test.py --model-path checkpoints/best.pt
 # 可视化训练过程
 python scripts/visualize_training.py --log-dir logs
 
-# 可视化检测结果
-python scripts/quick_visualize.py --data-path /path/to/test/data
+# 显示训练结果
+python scripts/show_training_results.py --checkpoint checkpoints/best.pt
 ```
 
 ## ⚙️ 参数说明
@@ -182,7 +223,7 @@ python scripts/quick_visualize.py --data-path /path/to/test/data
 ## 🔧 故障排除
 
 ### 常见问题
-1. **CUDA内存不足**: 减小批次大小或使用内存优化脚本
+1. **CUDA内存不足**: 减小批次大小或使用简化训练脚本
 2. **数据加载错误**: 检查数据路径和格式
 3. **训练不收敛**: 调整学习率和数据增强参数
 4. **模型保存失败**: 检查磁盘空间和权限
@@ -195,5 +236,5 @@ python scripts/quick_visualize.py --data-path /path/to/test/data
 
 ---
 
-**最后更新**: 2024年12月
+**最后更新**: 2024年6月  
 **版本**: v1.0 

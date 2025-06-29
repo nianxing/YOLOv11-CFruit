@@ -200,8 +200,8 @@ class YOLOv11Loss(nn.Module):
     def forward(self, cls_preds, reg_preds, targets):
         """
         Args:
-            cls_preds: 分类预测列表 [P3, P4, P5, P6]
-            reg_preds: 回归预测列表 [P3, P4, P5, P6]
+            cls_preds: 分类预测列表 [P3, P4, P5, P6] - 每个元素是 [B, num_classes, H, W]
+            reg_preds: 回归预测列表 [P3, P4, P5, P6] - 每个元素是 [B, 4*reg_max, H, W]
             targets: 目标张量 [B, N, 5] (class_id, x1, y1, x2, y2)
         Returns:
             total_loss: 总损失
@@ -235,7 +235,7 @@ class YOLOv11Loss(nn.Module):
                 reg_pred_b = reg_pred[b]  # [4*reg_max, H, W]
                 
                 # 获取特征层的空间尺寸
-                _, _, height, width = cls_pred_b.shape
+                _, height, width = cls_pred_b.shape  # 修复：移除batch维度
                 
                 # 简化的标签分配 - 为每个目标分配最近的网格点
                 if len(valid_targets) > 0:
@@ -256,8 +256,8 @@ class YOLOv11Loss(nn.Module):
                         center_y = (y1 + y2) / 2
                         
                         # 找到最近的网格点
-                        grid_x_norm = center_x / (cls_pred_b.shape[3] * 8 * (2 ** i))  # 8是基础步长
-                        grid_y_norm = center_y / (cls_pred_b.shape[2] * 8 * (2 ** i))
+                        grid_x_norm = center_x / (cls_pred_b.shape[2] * 8 * (2 ** i))  # 8是基础步长
+                        grid_y_norm = center_y / (cls_pred_b.shape[1] * 8 * (2 ** i))
                         
                         grid_x_idx = int(grid_x_norm * width)
                         grid_y_idx = int(grid_y_norm * height)

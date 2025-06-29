@@ -125,10 +125,9 @@ start_training() {
         --data $DATA_CONFIG \
         --epochs $EPOCHS \
         --batch-size $BATCH_SIZE \
-        --workers $WORKERS \
-        --lr $LEARNING_RATE \
-        --output-dir $CHECKPOINT_DIR \
-        --log-file $LOG_FILE"
+        --num-workers $WORKERS \
+        --save-dir $CHECKPOINT_DIR \
+        --log-dir $LOG_DIR"
     
     # 后台运行训练
     nohup $TRAIN_CMD > "$LOG_FILE" 2>&1 &

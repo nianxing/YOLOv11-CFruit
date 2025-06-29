@@ -4,21 +4,28 @@
 
 ## 📋 项目概述
 
-YOLOv11-CFruit 是一个基于YOLOv11架构的水果检测系统，专门用于识别和定位图像中的水果。该项目结合了最新的YOLOv11技术，提供了高效、准确的水果检测解决方案。
+YOLOv11-CFruit 是一个基于YOLOv11架构的水果检测系统，专用于识别和定位图像中的水果。项目结合了最新的YOLOv11技术，提供高效、准确的水果检测解决方案。
+
+---
+
+**最后更新：2024年6月**  
+**文档版本：v1.0**
+
+---
 
 ## 🚀 快速开始
 
 ### 环境要求
 - Python 3.8+
 - PyTorch 1.12+
-- CUDA 11.0+ (可选，用于GPU加速)
+- CUDA 11.0+（可选，用于GPU加速）
 
 ### 安装方式
 
-#### 方式1: 使用Docker (推荐)
+#### 方式1: 使用Docker（推荐）
 ```bash
 # Windows
-.\run_docker.ps1
+./run_docker.ps1
 
 # Linux/Mac
 docker-compose up -d
@@ -37,7 +44,7 @@ pip install -r requirements.txt
 #### 方式3: 使用Conda
 ```bash
 # Windows
-.\install_conda.ps1
+./install_conda.ps1
 
 # Linux/Mac
 ./install_conda.sh
@@ -47,41 +54,51 @@ pip install -r requirements.txt
 
 ```
 YOLOv11-CFruit/
-├── 📁 configs/                 # 配置文件
-│   ├── data/                   # 数据配置
-│   └── model/                  # 模型配置
-├── 📁 data/                    # 数据处理模块
+├── configs/                # 配置文件
+│   ├── data/               # 数据配置
+│   └── model/              # 模型配置
+├── data/                   # 数据处理模块
 │   └── dataset.py
-├── 📁 models/                  # 模型定义
-│   ├── backbone/               # 主干网络
-│   ├── neck/                   # 颈部网络
-│   ├── head/                   # 头部网络
+├── models/                 # 模型定义
+│   ├── backbone/           # 主干网络
+│   ├── neck/               # 颈部网络
+│   ├── head/               # 头部网络
 │   └── yolov11_cfruit.py
-├── 📁 training/                # 训练模块
+├── training/               # 训练模块
 │   ├── trainer.py
 │   └── scheduler.py
-├── 📁 utils/                   # 工具函数
+├── utils/                  # 工具函数
 │   ├── losses.py
+│   ├── simple_loss.py
 │   └── transforms.py
-├── 📁 scripts/                 # 训练和评估脚本
-│   ├── train_improved.py       # 改进版训练脚本
-│   ├── prepare_data.py         # 数据准备
-│   ├── evaluate_model.py       # 模型评估
+├── scripts/                # 训练和评估脚本
+│   ├── train_improved.py   # 改进版训练脚本
+│   ├── simple_train.py     # 简化训练脚本
+│   ├── auto_train_and_visualize.sh # 自动训练脚本
+│   ├── quick_auto_train.sh # 快速测试脚本
+│   ├── prepare_data_circle_fixed.py # 数据准备脚本（支持圆形标注）
+│   ├── evaluate_model.py   # 模型评估
+│   ├── visualize_training.py # 训练过程可视化
+│   ├── check_data.py       # 数据质量检查
+│   ├── quick_test.py       # 快速测试
+│   ├── quick_rename_labels.py # 标签批量重命名
+│   ├── rename_labels.py    # 标签重命名
 │   └── ...
-├── 📁 examples/                # 使用示例
+├── examples/               # 使用示例
 │   ├── basic_detection.py
 │   └── prepare_and_train.py
-├── 📁 docs/                    # 详细文档
+├── docs/                   # 详细文档
+│   ├── README.md
 │   └── data_preparation.md
-├── 📁 tests/                   # 测试文件
-├── 📁 inference/               # 推理模块
-├── 📁 evaluation/              # 评估结果
-└── 📄 文档文件
-    ├── README.md               # 项目说明
-    ├── QUICK_START.md          # 快速开始指南
-    ├── USAGE.md                # 使用说明
-    ├── DesignDoc.md            # 设计文档
-    └── ...
+├── tests/                  # 测试文件
+├── inference/              # 推理模块
+├── evaluation/             # 评估结果
+├── requirements.txt        # 依赖包
+├── README.md               # 项目说明
+├── QUICK_START.md          # 快速开始指南
+├── USAGE.md                # 使用说明
+├── DesignDoc.md            # 设计文档
+└── ...
 ```
 
 ## 🎯 主要功能
@@ -96,7 +113,7 @@ YOLOv11-CFruit/
 - 自动混合精度训练
 - 早停机制
 - 学习率调度
-- 梯度累积
+- 阶梯累积
 - 多GPU支持
 
 ### 3. 数据处理
@@ -109,22 +126,16 @@ YOLOv11-CFruit/
 
 ### 1. 数据准备
 ```bash
-python scripts/prepare_data.py --data-path /path/to/data
+python scripts/prepare_data_circle_fixed.py --input-dir /path/to/your/data --output-dir data/cfruit --class-names cfruit
 ```
 
 ### 2. 模型训练
 ```bash
-# 基础训练
-python scripts/train.py
-
 # 改进版训练（推荐）
-python scripts/train_improved.py
+python scripts/train_improved.py --device cuda --batch-size 8 --save-dir checkpoints
 
-# GPU训练
-python scripts/train_improved.py --device cuda --batch-size 8
-
-# CPU训练
-python scripts/train_improved.py --device cpu --batch-size 2
+# 简化训练
+python scripts/simple_train.py --device cuda --batch-size 8 --save-dir checkpoints
 ```
 
 ### 3. 模型评估
@@ -142,21 +153,21 @@ results = detect_fruits("path/to/image.jpg")
 
 ## 📊 性能指标
 
-| 模型 | mAP@0.5 | 推理速度 | 模型大小 |
-|------|---------|----------|----------|
-| YOLOv11-CFruit | 0.85+ | 30ms | 45MB |
-| YOLOv8-CFruit | 0.82 | 25ms | 42MB |
+| 模型           | mAP@0.5 | 推理速度 | 模型大小 |
+|----------------|---------|----------|----------|
+| YOLOv11-CFruit | 0.85+   | 30ms     | 45MB     |
+| YOLOv8-CFruit  | 0.82    | 25ms     | 42MB     |
 
-## 🔧 配置说明
+## ⚙️ 配置说明
 
 ### 模型配置
 配置文件位于 `configs/model/` 目录：
-- `yolov11_cfruit.yaml`: 基础配置
-- `yolov11_cfruit_improved.yaml`: 改进配置
+- `yolov11_cfruit.yaml`：基础配置
+- `yolov11_cfruit_improved.yaml`：改进配置
 
 ### 数据配置
 配置文件位于 `configs/data/` 目录：
-- `cfruit.yaml`: 水果数据集配置
+- `cfruit.yaml`：水果数据集配置
 
 ## 📚 详细文档
 
@@ -193,4 +204,4 @@ results = detect_fruits("path/to/image.jpg")
 
 ---
 
-**注意**: 本项目仍在积极开发中，API可能会有变化。 
+**注意**: 本项目仍在积极开发中，API 可能会有变化。 

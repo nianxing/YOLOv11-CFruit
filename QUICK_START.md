@@ -1,10 +1,17 @@
-# 油茶果检测快速开始指南
+# YOLOv11-CFruit 快速开始指南
 
-## 概述
+## 📋 概述
 
-本指南将帮助您快速使用基于labelme标注的油茶果数据来训练YOLOv8/YOLOv11-CFruit模型。
+本指南将帮助您快速使用基于labelme标注的水果数据来训练YOLOv11-CFruit模型。
 
-## 环境准备
+---
+
+**最后更新：2024年6月**  
+**文档版本：v1.0**
+
+---
+
+## 🚀 环境准备
 
 ### 1. 安装依赖
 
@@ -23,7 +30,7 @@ pip install -r requirements.txt
 python test_project.py
 ```
 
-## 数据准备
+## 📊 数据准备
 
 ### 数据格式要求
 
@@ -48,17 +55,20 @@ your_data/
 # 使用示例数据演示
 python examples/prepare_and_train.py --create-sample
 
-# 使用真实数据
-python examples/prepare_and_train.py --input-dir /path/to/your/data --class-names cfruit
+# 使用真实数据（支持圆形标注）
+python scripts/prepare_data_circle_fixed.py --input-dir /path/to/your/data --output-dir data/cfruit --class-names cfruit
 ```
 
-## 训练模型
+## 🎯 训练模型
 
 ### 一键训练（推荐）
 
 ```bash
-# 使用快速训练脚本
-python scripts/quick_train.py --input-dir /path/to/your/data --class-names cfruit
+# 使用自动训练脚本
+./scripts/auto_train_and_visualize.sh
+
+# 使用快速测试脚本
+./scripts/quick_auto_train.sh
 ```
 
 ### 分步训练
@@ -66,7 +76,7 @@ python scripts/quick_train.py --input-dir /path/to/your/data --class-names cfrui
 #### 步骤1: 数据准备
 
 ```bash
-python scripts/prepare_data.py \
+python scripts/prepare_data_circle_fixed.py \
     --input-dir /path/to/your/data \
     --output-dir data/cfruit \
     --class-names cfruit
@@ -75,25 +85,36 @@ python scripts/prepare_data.py \
 #### 步骤2: 开始训练
 
 ```bash
-python scripts/train.py \
-    --config configs/model/yolov8_cfruit.yaml \
+# 改进版训练（推荐）
+python scripts/train_improved.py \
+    --config configs/model/yolov11_cfruit_improved.yaml \
     --data configs/data/cfruit.yaml \
     --epochs 100 \
-    --batch-size 16
+    --batch-size 16 \
+    --save-dir checkpoints
+
+# 简化训练
+python scripts/simple_train.py \
+    --config configs/model/yolov11_cfruit.yaml \
+    --data configs/data/cfruit.yaml \
+    --epochs 100 \
+    --batch-size 16 \
+    --save-dir checkpoints
 ```
 
-## 训练参数说明
+## ⚙️ 训练参数说明
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | `--input-dir` | 必需 | 包含图像和JSON文件的目录 |
 | `--class-names` | cfruit | 类别名称列表 |
-| `--model-type` | yolov8 | 模型类型（yolov8/yolov11） |
 | `--epochs` | 100 | 训练轮数 |
 | `--batch-size` | 16 | 批次大小 |
 | `--img-size` | 640 | 输入图像尺寸 |
+| `--save-dir` | checkpoints | 模型保存目录 |
+| `--device` | auto | 训练设备（cuda/cpu/auto） |
 
-## 监控训练
+## 📈 监控训练
 
 ### TensorBoard
 
@@ -111,7 +132,7 @@ tensorboard --logdir logs
 - 验证指标
 - 模型保存信息
 
-## 模型测试
+## 🧪 模型测试
 
 训练完成后，您可以测试模型：
 
@@ -121,7 +142,7 @@ python examples/basic_detection.py \
     --image /path/to/test/image.jpg
 ```
 
-## 常见问题
+## ❓ 常见问题
 
 ### Q: 如何处理不同尺寸的图像？
 A: 训练时会自动调整到统一尺寸（默认640x640），保持宽高比。
@@ -146,7 +167,7 @@ A: 修改 `--class-names` 参数，例如：
 --class-names cfruit unripe_cfruit
 ```
 
-## 性能优化建议
+## 🚀 性能优化建议
 
 ### 数据质量
 - 确保标注准确性
@@ -165,19 +186,24 @@ A: 修改 `--class-names` 参数，例如：
 - 优化数据加载
 - 使用SSD存储
 
-## 完整示例
+## 📝 完整示例
 
 ```bash
 # 1. 创建示例数据并训练
 python examples/prepare_and_train.py --create-sample --epochs 10
 
 # 2. 使用真实数据训练
-python scripts/quick_train.py \
+python scripts/prepare_data_circle_fixed.py \
     --input-dir /path/to/your/data \
-    --class-names cfruit \
-    --model-type yolov8 \
+    --output-dir data/cfruit \
+    --class-names cfruit
+
+python scripts/train_improved.py \
+    --config configs/model/yolov11_cfruit_improved.yaml \
+    --data configs/data/cfruit.yaml \
     --epochs 100 \
-    --batch-size 16
+    --batch-size 16 \
+    --save-dir checkpoints
 
 # 3. 监控训练
 tensorboard --logdir logs
@@ -188,7 +214,7 @@ python examples/basic_detection.py \
     --image /path/to/test/image.jpg
 ```
 
-## 下一步
+## 🔗 下一步
 
 训练完成后，您可以：
 1. 测试模型性能
