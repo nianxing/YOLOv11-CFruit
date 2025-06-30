@@ -1,59 +1,81 @@
 # YOLOv11-CFruit 改进模型配置
 model:
-  # 主干网络配置
+  name: "YOLOv11-CFruit-Improved"
+  input_size: 640
+  num_classes: 1
+  anchors: [[10, 13], [16, 30], [33, 23], [30, 61], [62, 45], [59, 119], [116, 90], [156, 198], [373, 326]]
+  anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+  
+  # 改进的骨干网络配置
   backbone:
-    type: 'cspdarknet_v11'
+    type: "CSPDarknet"
     depth_multiple: 1.0
     width_multiple: 1.0
-    cbam: true
-    cbam_ratio: 16
-    use_c2f: true  # YOLOv11特性：使用C2f模块
-    activation: 'silu'
+    activation: "SiLU"
+    attention: "CBAM"
     
-  # 颈部网络配置
+  # 改进的颈部网络配置
   neck:
-    type: 'panet'
+    type: "PANet"
     depth_multiple: 1.0
     width_multiple: 1.0
-    transformer: true
-    transformer_heads: 8
-    transformer_dim: 256
-    transformer_layers: 2  # YOLOv11增加层数
-    activation: 'silu'
+    activation: "SiLU"
+    attention: "CBAM"
     
-  # 头部网络配置
+  # 改进的检测头配置
   head:
-    type: 'anchor_free'
+    type: "AnchorFree"
     num_classes: 1
-    reg_max: 16
-    activation: 'silu'
+    activation: "SiLU"
+    use_attention: true
 
 # 训练配置 - 改进版本
 training:
-  epochs: 100  # 增加训练轮数
-  batch_size: 4  # 适中的批次大小
-  img_size: 640
-  device: 'auto'  # 自动选择设备
+  # 优化器配置
+  optimizer: "AdamW"
+  learning_rate: 0.001
+  weight_decay: 0.0005
+  momentum: 0.937
   
-  # 优化器配置 - 改进
-  optimizer:
-    type: 'adamw'  # YOLOv11使用AdamW
-    lr: 0.0001  # 降低学习率
-    weight_decay: 0.0005
-    betas: [0.9, 0.999]
-    
-  # 学习率调度器 - 改进
-  scheduler:
-    type: 'cosine'
-    warmup_epochs: 5  # 增加预热轮数
-    warmup_lr: 0.00001
-    min_lr: 0.000001  # 降低最小学习率
-    
-  # 损失函数权重 - 优化
-  loss_weights:
-    cls: 0.5  # 平衡分类损失权重
-    box: 7.0  # 边界框损失权重
-    dfl: 1.5
+  # 学习率调度
+  scheduler: "cosine"  # cosine, plateau, step
+  scheduler_t0: 10
+  scheduler_t_mult: 2
+  min_lr: 0.00001
+  
+  # 训练参数 - 优化内存使用
+  batch_size: 2  # 减少批次大小
+  epochs: 100
+  warmup_epochs: 3
+  warmup_lr: 0.0001
+  gradient_accumulation_steps: 4  # 增加梯度累积来保持有效批次大小
+  
+  # 损失函数配置
+  ignore_thresh: 0.7
+  label_smooth: 0.1
+  focal_loss: true
+  focal_alpha: 0.25
+  focal_gamma: 2.0
+  
+  # 数据增强
+  mixup: true
+  mosaic: true
+  mixup_alpha: 0.1
+  mosaic_prob: 0.5
+  
+  # 早停配置
+  early_stopping_patience: 15
+  early_stopping_min_delta: 0.001
+  
+  # 保存配置
+  save_dir: "checkpoints"
+  save_interval: 5
+  
+  # 混合精度训练
+  mixed_precision: true
+  
+  # 梯度裁剪
+  gradient_clip: 10.0
 
 # 数据增强配置 - 改进
 augmentation:
@@ -93,4 +115,36 @@ yolov11:
     
   # 模型保存配置
   save_best_only: true
-  save_last: true 
+  save_last: true
+
+data:
+  # 数据配置
+  train_images: "data/cfruit/train"
+  train_labels: "data/cfruit/train_labels"
+  val_images: "data/cfruit/val"
+  val_labels: "data/cfruit/val_labels"
+  
+  # 数据增强参数
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 10.0
+  translate: 0.1
+  scale: 0.5
+  shear: 2.0
+  perspective: 0.0
+  flipud: 0.0
+  fliplr: 0.5
+  mosaic: 1.0
+  mixup: 0.0
+  copy_paste: 0.0
+
+evaluation:
+  # 评估配置
+  conf_thresh: 0.25
+  nms_thresh: 0.45
+  max_det: 300
+  
+  # 指标计算
+  iou_thresh: 0.5
+  class_agnostic: false 

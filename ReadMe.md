@@ -1,207 +1,395 @@
-# YOLOv11-CFruit: 基于YOLOv11的水果检测系统
+# YOLOv11-CFruit: 油茶果检测模型
 
-[English](README_en.md) | 中文
+基于YOLOv11的油茶果（Camellia oleifera）检测模型，专门针对油茶果检测任务进行了优化和改进。
 
-## 📋 项目概述
+## 🚀 特性
 
-YOLOv11-CFruit 是一个基于YOLOv11架构的水果检测系统，专用于识别和定位图像中的水果。项目结合了最新的YOLOv11技术，提供高效、准确的水果检测解决方案。
+- **改进的YOLOv11架构**：针对油茶果检测进行了专门优化
+- **多GPU训练支持**：支持DataParallel和DistributedDataParallel
+- **内存优化**：自动混合精度训练，梯度累积，内存管理优化
+- **数据增强**：Mixup、Mosaic、旋转、剪切等增强策略
+- **早停机制**：防止过拟合，自动保存最佳模型
+- **学习率调度**：余弦退火调度器，自适应学习率调整
 
----
+## 📋 目录结构
 
-**最后更新：2024年6月**  
-**文档版本：v1.0**
-
----
-
-## 🚀 快速开始
-
-### 环境要求
-- Python 3.8+
-- PyTorch 1.12+
-- CUDA 11.0+（可选，用于GPU加速）
-
-### 安装方式
-
-#### 方式1: 使用Docker（推荐）
-```bash
-# Windows
-./run_docker.ps1
-
-# Linux/Mac
-docker-compose up -d
+```
+YOLOv11-CFruit/
+├── README.md                 # 项目文档
+├── LICENSE                   # MIT许可证
+├── requirements.txt          # Python依赖
+├── configs/                  # 配置文件
+│   ├── data/cfruit.yaml     # 数据配置
+│   └── model/yolov11_cfruit_improved.yaml # 模型配置
+├── data/
+│   └── dataset.py           # 数据集类
+├── models/                   # 模型文件
+│   ├── yolov11_cfruit.py    # YOLOv11模型
+│   ├── backbone/            # 骨干网络
+│   ├── neck/               # 颈部网络
+│   └── head/               # 检测头
+├── training/                # 训练模块
+├── utils/                   # 工具函数
+│   ├── losses.py           # 损失函数
+│   └── transforms.py       # 数据变换
+├── scripts/                 # 核心脚本
+│   ├── train_improved_v2.py # 主要训练脚本
+│   ├── check_data.py        # 数据检查
+│   └── evaluate_model.py    # 模型评估
+└── docs/                    # 详细文档
 ```
 
-#### 方式2: 手动安装
+## 🛠️ 安装
+
+### 环境要求
+
+- Python 3.8+
+- PyTorch 1.9+
+- CUDA 11.0+ (GPU训练)
+- 16GB+ GPU内存 (推荐)
+
+### 快速安装
+
 ```bash
 # 克隆项目
-git clone <repository-url>
+git clone https://github.com/your-repo/YOLOv11-CFruit.git
 cd YOLOv11-CFruit
 
 # 安装依赖
 pip install -r requirements.txt
+
+# 验证安装
+python scripts/check_data.py
 ```
 
-#### 方式3: 使用Conda
+### Conda安装
+
 ```bash
-# Windows
-./install_conda.ps1
+# 创建conda环境
+conda create -n yolov11-cfruit python=3.9
+conda activate yolov11-cfruit
 
-# Linux/Mac
-./install_conda.sh
+# 安装PyTorch
+conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+
+# 安装其他依赖
+pip install -r requirements.txt
 ```
 
-## 📁 项目结构
+## 📊 数据准备
+
+### 数据格式
+
+项目支持以下数据格式：
+- **图像文件**：`.jpg`, `.jpeg`, `.png`, `.bmp`, `.tiff`
+- **标注文件**：Labelme格式的`.json`文件
+
+### 目录结构
 
 ```
-YOLOv11-CFruit/
-├── configs/                # 配置文件
-│   ├── data/               # 数据配置
-│   └── model/              # 模型配置
-├── data/                   # 数据处理模块
-│   └── dataset.py
-├── models/                 # 模型定义
-│   ├── backbone/           # 主干网络
-│   ├── neck/               # 颈部网络
-│   ├── head/               # 头部网络
-│   └── yolov11_cfruit.py
-├── training/               # 训练模块
-│   ├── trainer.py
-│   └── scheduler.py
-├── utils/                  # 工具函数
-│   ├── losses.py
-│   ├── simple_loss.py
-│   └── transforms.py
-├── scripts/                # 训练和评估脚本
-│   ├── train_improved.py   # 改进版训练脚本
-│   ├── simple_train.py     # 简化训练脚本
-│   ├── auto_train_and_visualize.sh # 自动训练脚本
-│   ├── quick_auto_train.sh # 快速测试脚本
-│   ├── prepare_data_circle_fixed.py # 数据准备脚本（支持圆形标注）
-│   ├── evaluate_model.py   # 模型评估
-│   ├── visualize_training.py # 训练过程可视化
-│   ├── check_data.py       # 数据质量检查
-│   ├── quick_test.py       # 快速测试
-│   ├── quick_rename_labels.py # 标签批量重命名
-│   ├── rename_labels.py    # 标签重命名
-│   └── ...
-├── examples/               # 使用示例
-│   ├── basic_detection.py
-│   └── prepare_and_train.py
-├── docs/                   # 详细文档
-│   ├── README.md
-│   └── data_preparation.md
-├── tests/                  # 测试文件
-├── inference/              # 推理模块
-├── evaluation/             # 评估结果
-├── requirements.txt        # 依赖包
-├── README.md               # 项目说明
-├── QUICK_START.md          # 快速开始指南
-├── USAGE.md                # 使用说明
-├── DesignDoc.md            # 设计文档
+your_data/
+├── image1.jpg
+├── image1.json
+├── image2.jpg
+├── image2.json
 └── ...
 ```
 
-## 🎯 主要功能
+### 标注格式
 
-### 1. 模型架构
-- **YOLOv11-CFruit**: 基于YOLOv11的改进架构
-- **CSPDarknet**: 高效的主干网络
-- **PANet**: 特征金字塔网络
-- **Anchor-Free**: 无锚点检测头
+JSON文件应为Labelme格式：
+```json
+{
+  "version": "4.5.6",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "cfruit",
+      "points": [[x1, y1], [x2, y2], [x3, y3], [x4, y4]],
+      "group_id": null,
+      "shape_type": "polygon",
+      "flags": {}
+    }
+  ],
+  "imagePath": "image1.jpg",
+  "imageData": null,
+  "imageHeight": 480,
+  "imageWidth": 640
+}
+```
 
-### 2. 训练功能
-- 自动混合精度训练
-- 早停机制
-- 学习率调度
-- 阶梯累积
-- 多GPU支持
+### 数据检查
 
-### 3. 数据处理
-- 自动数据增强
-- 多格式支持
-- 数据验证
-- 可视化工具
-
-## 🛠️ 使用方法
-
-### 1. 数据准备
 ```bash
-python scripts/prepare_data_circle_fixed.py --input-dir /path/to/your/data --output-dir data/cfruit --class-names cfruit
+# 检查数据路径和格式
+python scripts/check_data.py
 ```
 
-### 2. 模型训练
+## 🚀 训练
+
+### 快速开始
+
 ```bash
-# 改进版训练（推荐）
-python scripts/train_improved.py --device cuda --batch-size 8 --save-dir checkpoints
+# 创建示例数据（如果没有真实数据）
+python scripts/check_data.py
 
-# 简化训练
-python scripts/simple_train.py --device cuda --batch-size 8 --save-dir checkpoints
+# 开始训练
+python scripts/train_improved_v2.py \
+    --config configs/model/yolov11_cfruit_improved.yaml \
+    --data-config configs/data/cfruit.yaml \
+    --batch-size 2 \
+    --epochs 100 \
+    --save-dir checkpoints
 ```
 
-### 3. 模型评估
+### 多GPU训练
+
 ```bash
-python scripts/evaluate_model.py --model-path checkpoints/best.pt
+# 设置内存优化环境变量
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+# 使用4个GPU训练
+nohup python scripts/train_improved_v2.py \
+    --config configs/model/yolov11_cfruit_improved.yaml \
+    --data-config configs/data/cfruit.yaml \
+    --batch-size 2 \
+    --epochs 100 \
+    --save-dir checkpoints_improved \
+    > training_$(date +%Y%m%d_%H%M%S).log 2>&1 &
 ```
 
-### 4. 推理检测
-```python
-from examples.basic_detection import detect_fruits
+### 从检查点恢复训练
 
-# 检测图像中的水果
-results = detect_fruits("path/to/image.jpg")
+```bash
+python scripts/train_improved_v2.py \
+    --config configs/model/yolov11_cfruit_improved.yaml \
+    --data-config configs/data/cfruit.yaml \
+    --batch-size 2 \
+    --epochs 100 \
+    --save-dir checkpoints_improved \
+    --resume checkpoints/best.pt
 ```
 
-## 📊 性能指标
+### 训练参数
 
-| 模型           | mAP@0.5 | 推理速度 | 模型大小 |
-|----------------|---------|----------|----------|
-| YOLOv11-CFruit | 0.85+   | 30ms     | 45MB     |
-| YOLOv8-CFruit  | 0.82    | 25ms     | 42MB     |
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `--config` | 模型配置文件 | `configs/model/yolov11_cfruit_improved.yaml` |
+| `--data-config` | 数据配置文件 | `configs/data/cfruit.yaml` |
+| `--batch-size` | 批次大小 | 2 |
+| `--epochs` | 训练轮数 | 100 |
+| `--save-dir` | 保存目录 | `checkpoints` |
+| `--resume` | 恢复训练检查点 | 无 |
 
-## ⚙️ 配置说明
+## 🔧 配置
 
 ### 模型配置
-配置文件位于 `configs/model/` 目录：
-- `yolov11_cfruit.yaml`：基础配置
-- `yolov11_cfruit_improved.yaml`：改进配置
+
+主要配置在 `configs/model/yolov11_cfruit_improved.yaml`：
+
+```yaml
+model:
+  name: "YOLOv11-CFruit-Improved"
+  input_size: 640
+  num_classes: 1
+  anchors: [[10, 13], [16, 30], [33, 23], [30, 61], [62, 45], [59, 119], [116, 90], [156, 198], [373, 326]]
+  anchor_masks: [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+
+training:
+  optimizer: "AdamW"
+  learning_rate: 0.001
+  weight_decay: 0.0005
+  batch_size: 2
+  epochs: 100
+  scheduler: "cosine"
+  gradient_accumulation_steps: 4
+  mixed_precision: true
+  gradient_clip: 10.0
+```
 
 ### 数据配置
-配置文件位于 `configs/data/` 目录：
-- `cfruit.yaml`：水果数据集配置
 
-## 📚 详细文档
+数据配置在 `configs/data/cfruit.yaml`：
 
-- [快速开始指南](QUICK_START.md)
-- [使用说明](USAGE.md)
-- [设计文档](DesignDoc.md)
-- [数据准备指南](docs/data_preparation.md)
-- [Docker设置指南](DOCKER_WINDOWS_SETUP.md)
+```yaml
+dataset:
+  train: 'data/cfruit/train/images'
+  val: 'data/cfruit/val/images'
+  train_labels: 'data/cfruit/train/labels'
+  val_labels: 'data/cfruit/val/labels'
+  nc: 1
+  names: ['cfruit']
+```
 
-## 🤝 贡献指南
+## 📈 监控训练
 
-1. Fork 项目
-2. 创建功能分支
-3. 提交更改
-4. 推送到分支
-5. 创建 Pull Request
+### 查看训练日志
+
+```bash
+# 实时查看训练日志
+tail -f training_*.log
+
+# 查看GPU使用情况
+nvidia-smi
+
+# 查看进程
+ps aux | grep train_improved
+```
+
+### 训练指标
+
+训练过程中会记录以下指标：
+- 训练损失 (Training Loss)
+- 验证损失 (Validation Loss)
+- 学习率 (Learning Rate)
+- GPU内存使用情况
+
+## 🎯 评估
+
+### 模型评估
+
+```bash
+# 评估模型性能
+python scripts/evaluate_model.py \
+    --model checkpoints/best.pt \
+    --data-config configs/data/cfruit.yaml \
+    --output-dir evaluation_results
+```
+
+### 评估指标
+
+- **mAP@0.5**: 平均精度 (IoU=0.5)
+- **mAP@0.5:0.95**: 平均精度 (IoU=0.5:0.95)
+- **Precision**: 精确率
+- **Recall**: 召回率
+- **F1-Score**: F1分数
+
+## 🔍 推理
+
+### 单张图像推理
+
+```python
+from models.yolov11_cfruit import YOLOv11CFruit
+import torch
+
+# 加载模型
+model = YOLOv11CFruit(config)
+model.load_state_dict(torch.load('checkpoints/best.pt'))
+model.eval()
+
+# 推理
+with torch.no_grad():
+    predictions = model(image)
+```
+
+### 批量推理
+
+```python
+# 批量处理
+results = []
+for images in dataloader:
+    with torch.no_grad():
+        predictions = model(images)
+        results.extend(predictions)
+```
+
+## 🐛 故障排除
+
+### 常见问题
+
+#### 1. GPU内存不足
+
+```bash
+# 减少批次大小
+--batch-size 1
+
+# 设置内存优化环境变量
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+```
+
+#### 2. 数据路径错误
+
+```bash
+# 检查数据路径
+python scripts/check_data.py
+```
+
+#### 3. 依赖包版本冲突
+
+```bash
+# 重新安装依赖
+pip uninstall torch torchvision
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+```
+
+### 性能优化
+
+#### 内存优化
+- 使用混合精度训练 (`mixed_precision: true`)
+- 启用梯度累积 (`gradient_accumulation_steps: 4`)
+- 设置内存管理环境变量
+
+#### 训练优化
+- 使用余弦退火学习率调度
+- 启用早停机制
+- 使用Focal Loss和标签平滑
+
+## 📚 技术细节
+
+### 模型架构
+
+- **骨干网络**: CSPDarknet + CBAM注意力机制
+- **颈部网络**: PANet + 特征金字塔
+- **检测头**: Anchor-free检测头
+- **损失函数**: YOLOv11Loss (EIoU + Focal Loss + DFL)
+
+### 数据增强
+
+- **几何增强**: 旋转、缩放、剪切、透视变换
+- **颜色增强**: HSV调整、亮度对比度
+- **高级增强**: Mixup、Mosaic、Copy-Paste
+
+### 训练策略
+
+- **学习率调度**: 余弦退火 + 预热
+- **优化器**: AdamW + 权重衰减
+- **正则化**: 标签平滑、梯度裁剪
+- **早停**: 基于验证损失的早停机制
+
+## 🤝 贡献
+
+欢迎提交Issue和Pull Request！
+
+### 开发环境设置
+
+```bash
+# 克隆项目
+git clone https://github.com/your-repo/YOLOv11-CFruit.git
+cd YOLOv11-CFruit
+
+# 安装开发依赖
+pip install -r requirements.txt
+pip install pytest black flake8
+
+# 运行测试
+pytest tests/
+```
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+本项目采用MIT许可证 - 详见 [LICENSE](LICENSE) 文件。
 
 ## 🙏 致谢
 
-- YOLOv11 团队
-- PyTorch 社区
-- 所有贡献者
+- YOLOv11原始实现
+- PyTorch团队
+- 开源社区贡献者
 
 ## 📞 联系方式
 
-如有问题或建议，请通过以下方式联系：
-- 提交 Issue
-- 发送邮件
-- 参与讨论
+- 项目主页: https://github.com/your-repo/YOLOv11-CFruit
+- 问题反馈: https://github.com/your-repo/YOLOv11-CFruit/issues
+- 邮箱: cindynianx@gmail.com
 
 ---
 
-**注意**: 本项目仍在积极开发中，API 可能会有变化。 
