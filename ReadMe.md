@@ -13,6 +13,10 @@
 
 ## 🎬 演示
 
+### 测试图片
+
+![CFruit Detection Picture](/docs/img/val.jpg)
+
 ### 演示GIF
 
 <!-- 在这里添加您的GIF -->
